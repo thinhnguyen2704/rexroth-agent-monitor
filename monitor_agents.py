@@ -11,27 +11,27 @@ DASHBOARD_FILE = "index.html"
 SITES = {
     "India": {
         "url": "https://www.boschrexroth.com/en/in/",
-        "endpoint": "https://www.boschrexroth.com/en/in/rexroth-chat-IN-ready",
+        "endpoint": "https://cx.bosch-so.com/rexroth-chat-IN-ready",
         "key": "GP_Bosch_Rexroth_Chat_IN_VAG"
     },
     "Romania": {
         "url": "https://www.boschrexroth.com/ro/ro/",
-        "endpoint": "https://www.boschrexroth.com/ro/ro/rexroth-chat-RO-ready",
+        "endpoint": "https://cx.bosch-so.com/rexroth-chat-RO-ready",
         "key": "GP_Bosch_Rexroth_Chat_RO_VAG"
     },
     "Hungary": {
         "url": "https://www.boschrexroth.com/hu/hu/",
-        "endpoint": "https://www.boschrexroth.com/hu/hu/rexroth-chat-HU-ready",
+        "endpoint": "https://cx.bosch-so.com/rexroth-chat-HU-ready",
         "key": "GP_Bosch_Rexroth_Chat_HU_VAG"
     },
     "Czech Republic": {
         "url": "https://www.boschrexroth.com/cs/cz/",
-        "endpoint": "https://www.boschrexroth.com/cs/cz/rexroth-chat-CZ-ready",
+        "endpoint": "https://cx.bosch-so.com/rexroth-chat-CZ-ready",
         "key": "GP_Bosch_Rexroth_Chat_CZ_VAG"
     },
     "Mexico": {
         "url": "https://www.boschrexroth.com/es/mx/",
-        "endpoint": "https://www.boschrexroth.com/es/mx/rexroth-chat-MX-ready",
+        "endpoint": "https://cx.bosch-so.com/rexroth-chat-MX-ready",
         "key": "GP_Bosch_Rexroth_Chat_MX_VAG"
     }
 }
