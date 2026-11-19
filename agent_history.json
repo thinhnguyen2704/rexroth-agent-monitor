@@ -5,6 +5,11 @@
                 "agents": -1,
                 "status": "HTTP Error 404",
                 "timestamp": "2026-11-19 04:26:31"
+            },
+            "07:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-19 07:34:07"
             }
         },
         "Romania": {
@@ -12,6 +17,11 @@
                 "agents": -1,
                 "status": "HTTP Error 404",
                 "timestamp": "2026-11-19 04:26:31"
+            },
+            "07:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-19 07:34:07"
             }
         },
         "Hungary": {
@@ -19,6 +29,11 @@
                 "agents": -1,
                 "status": "HTTP Error 404",
                 "timestamp": "2026-11-19 04:26:31"
+            },
+            "07:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-19 07:34:07"
             }
         },
         "Czech Republic": {
@@ -26,6 +41,11 @@
                 "agents": -1,
                 "status": "HTTP Error 404",
                 "timestamp": "2026-11-19 04:26:31"
+            },
+            "07:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-19 07:34:07"
             }
         },
         "Mexico": {
@@ -33,6 +53,11 @@
                 "agents": -1,
                 "status": "HTTP Error 404",
                 "timestamp": "2026-11-19 04:26:31"
+            },
+            "07:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-19 07:34:07"
             }
         }
     }
