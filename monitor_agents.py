@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Configurations
 HISTORY_FILE = "agent_history.json"
-DASHBOARD_FILE = "dashboard_report.html"
+DASHBOARD_FILE = "index.html"
 
 SITES = {
     "India": {
