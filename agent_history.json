@@ -197,5 +197,42 @@
                 "timestamp": "2026-11-20 20:51:06"
             }
         }
+    },
+    "2026-11-21": {
+        "India": {
+            "01:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-21 01:53:13"
+            }
+        },
+        "Romania": {
+            "01:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-21 01:53:13"
+            }
+        },
+        "Hungary": {
+            "01:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-21 01:53:13"
+            }
+        },
+        "Czech Republic": {
+            "01:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-21 01:53:13"
+            }
+        },
+        "Mexico": {
+            "01:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-21 01:53:13"
+            }
+        }
     }
 }
