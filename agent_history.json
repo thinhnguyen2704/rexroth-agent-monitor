@@ -326,6 +326,11 @@
                 "agents": 0,
                 "status": "No Agents Available",
                 "timestamp": "2026-11-22 17:29:42"
+            },
+            "22:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-22 22:58:24"
             }
         },
         "Romania": {
@@ -343,6 +348,11 @@
                 "agents": 0,
                 "status": "No Agents Available",
                 "timestamp": "2026-11-22 17:29:42"
+            },
+            "22:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-22 22:58:24"
             }
         },
         "Hungary": {
@@ -360,6 +370,11 @@
                 "agents": 0,
                 "status": "No Agents Available",
                 "timestamp": "2026-11-22 17:29:42"
+            },
+            "22:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-22 22:58:24"
             }
         },
         "Czech Republic": {
@@ -377,6 +392,11 @@
                 "agents": 0,
                 "status": "No Agents Available",
                 "timestamp": "2026-11-22 17:29:42"
+            },
+            "22:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-22 22:58:24"
             }
         },
         "Mexico": {
@@ -394,6 +414,11 @@
                 "agents": 0,
                 "status": "No Agents Available",
                 "timestamp": "2026-11-22 17:29:42"
+            },
+            "22:00": {
+                "agents": 0,
+                "status": "No Agents Available",
+                "timestamp": "2026-11-22 22:58:24"
             }
         }
     }
