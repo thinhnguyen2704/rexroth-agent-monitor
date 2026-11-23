@@ -6,11 +6,19 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 30px; color: #333; }
         h1 { color: #005691; border-bottom: 3px solid #005691; padding-bottom: 10px; margin-bottom: 5px; }
-        .meta { color: #666; margin-bottom: 30px; font-size: 0.95em; }
+        .meta { color: #666; margin-bottom: 25px; font-size: 0.95em; }
+        
+        /* Interactive Controls */
+        .controls-container { background-color: #ffffff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }
+        .controls-container label { font-weight: bold; color: #495057; }
+        .controls-container select { padding: 8px 15px; border-radius: 4px; border: 1px solid #ced4da; font-size: 1em; color: #495057; cursor: pointer; }
+        .controls-container select:focus { outline: none; border-color: #005691; }
+
         table { width: 100%; border-collapse: collapse; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 40px; }
         th { background-color: #005691; color: white; padding: 12px 15px; font-weight: 600; text-align: left; }
         td { padding: 12px 15px; border-bottom: 1px solid #eee; }
         tr:last-child td { border-bottom: none; }
+        
         .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; display: inline-block; }
         .badge-online { background-color: #d1e7dd; color: #0f5132; }
         .badge-no-agents { background-color: #fff3cd; color: #664d03; }
@@ -22,15 +30,122 @@
         .cell-no-agents { background-color: #fff3cd; color: #846100; }
         .cell-offline { background-color: #f8d7da; color: #842029; }
         .cell-empty { background-color: #fafafa; color: #ccc; }
-        
         .timeline-header { text-align: center; font-size: 0.75em; background-color: #f1f3f5; color: #495057; }
     </style>
+    
+    <script>
+        // Injected data blocks safely passed via replacement
+        const historyData = __HISTORY_DATA__;
+        const sitesConfig = __SITES_CONFIG__;
+        const allHours = __ALL_HOURS__;
+
+        function populateDateSelector() {
+            const selector = document.getElementById("date-selector");
+            const dates = Object.keys(historyData).sort().reverse(); // Show newest date first
+            
+            selector.innerHTML = "";
+            dates.forEach(date => {
+                const option = document.createElement("option");
+                option.value = date;
+                option.text = date;
+                selector.appendChild(option);
+            });
+
+            if (dates.length > 0) {
+                selector.selectedIndex = 0;
+                renderDataForDate(dates[0]);
+            }
+        }
+
+        function onDateChanged() {
+            const selectedDate = document.getElementById("date-selector").value;
+            renderDataForDate(selectedDate);
+        }
+
+        function renderDataForDate(selectedDate) {
+            const dateData = historyData[selectedDate] || {};
+            
+            // 1. Render Current Site Status Table
+            const statusTbody = document.getElementById("status-table-body");
+            statusTbody.innerHTML = "";
+
+            Object.keys(sitesConfig).forEach(country => {
+                const config = sitesConfig[country];
+                const countryToday = dateData[country] || {};
+                
+                // Find the latest recorded hour inside this day's log
+                const loggedHours = Object.keys(countryToday).sort();
+                const latestHour = loggedHours.length > 0 ? loggedHours[loggedHours.length - 1] : null;
+                const latestCheck = latestHour ? countryToday[latestHour] : {"agents": -1, "status": "No logs recorded"};
+                
+                const agentsVal = latestCheck.agents;
+                const agentsDisplay = agentsVal >= 0 ? agentsVal : "N/A";
+                
+                let badgeClass = "badge-offline";
+                if (agentsVal > 0) {
+                    badgeClass = "badge-online";
+                } else if (agentsVal === 0) {
+                    badgeClass = "badge-no-agents";
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${country}</strong></td>
+                    <td><a href="${config.url}" target="_blank">${config.url}</a></td>
+                    <td><strong>${agentsDisplay}</strong></td>
+                    <td><span class="badge ${badgeClass}">${latestCheck.status}</span></td>
+                `;
+                statusTbody.appendChild(tr);
+            });
+
+            // 2. Render Timeline Table
+            const timelineTitle = document.getElementById("timeline-title");
+            timelineTitle.innerText = `Daily Hourly Log Timeline (${selectedDate})`;
+
+            const timelineTbody = document.getElementById("timeline-table-body");
+            timelineTbody.innerHTML = "";
+
+            Object.keys(sitesConfig).forEach(country => {
+                const countryToday = dateData[country] || {};
+                const tr = document.createElement("tr");
+                
+                let rowHtml = `<td><strong>${country}</strong></td>`;
+                
+                allHours.forEach(hr => {
+                    if (hr in countryToday) {
+                        const hourData = countryToday[hr];
+                        const agents = hourData.agents;
+                        if (agents > 0) {
+                            rowHtml += `<td class="timeline-cell cell-online" title="${hourData.status}">${agents}a</td>`;
+                        } else if (agents === 0) {
+                            rowHtml += `<td class="timeline-cell cell-no-agents" title="${hourData.status}">0</td>`;
+                        } else {
+                            rowHtml += `<td class="timeline-cell cell-offline" title="${hourData.status}">❌</td>`;
+                        }
+                    } else {
+                        rowHtml += `<td class="timeline-cell cell-empty">-</td>`;
+                    }
+                });
+                
+                tr.innerHTML = rowHtml;
+                timelineTbody.appendChild(tr);
+            });
+        }
+
+        window.onload = populateDateSelector;
+    </script>
 </head>
 <body>
-    <h1>🤖 Bosch Rexroth Chat Availability</h1>
-    <div class="meta">Last System Check: <strong>2026-11-23 03:31:53</strong> | Check interval: Hourly</div>
+    <h1>🤖 Bosch Rexroth Chat Availability Dashboard</h1>
+    <div class="meta">Last Evaluated: <strong>__LAST_CHECKED__</strong> | Check interval: Hourly</div>
     
-    <h2>Current Site Status</h2>
+    <!-- Interactive Date Selection Bar -->
+    <div class="controls-container">
+        <label for="date-selector">📅 Select Monitoring Date: </label>
+        <select id="date-selector" onchange="onDateChanged()"></select>
+    </div>
+
+    <h2>Current Site Status (Last Logged Instance of Day)</h2>
     <table>
         <thead>
             <tr>
@@ -40,58 +155,22 @@
                 <th>Current Status</th>
             </tr>
         </thead>
-        <tbody>
-    
-            <tr>
-                <td><strong>India</strong></td>
-                <td><a href="https://www.boschrexroth.com/en/in/" target="_blank">https://www.boschrexroth.com/en/in/</a></td>
-                <td><strong>0</strong></td>
-                <td><span class="badge badge-no-agents">No Agents Available</span></td>
-            </tr>
-        
-            <tr>
-                <td><strong>Romania</strong></td>
-                <td><a href="https://www.boschrexroth.com/ro/ro/" target="_blank">https://www.boschrexroth.com/ro/ro/</a></td>
-                <td><strong>0</strong></td>
-                <td><span class="badge badge-no-agents">No Agents Available</span></td>
-            </tr>
-        
-            <tr>
-                <td><strong>Hungary</strong></td>
-                <td><a href="https://www.boschrexroth.com/hu/hu/" target="_blank">https://www.boschrexroth.com/hu/hu/</a></td>
-                <td><strong>0</strong></td>
-                <td><span class="badge badge-no-agents">No Agents Available</span></td>
-            </tr>
-        
-            <tr>
-                <td><strong>Czech Republic</strong></td>
-                <td><a href="https://www.boschrexroth.com/cs/cz/" target="_blank">https://www.boschrexroth.com/cs/cz/</a></td>
-                <td><strong>0</strong></td>
-                <td><span class="badge badge-no-agents">No Agents Available</span></td>
-            </tr>
-        
-            <tr>
-                <td><strong>Mexico</strong></td>
-                <td><a href="https://www.boschrexroth.com/es/mx/" target="_blank">https://www.boschrexroth.com/es/mx/</a></td>
-                <td><strong>0</strong></td>
-                <td><span class="badge badge-no-agents">No Agents Available</span></td>
-            </tr>
-        
+        <tbody id="status-table-body">
+            <!-- Dynamic Injection -->
         </tbody>
     </table>
     
-    <h2>Daily Hourly Log Timeline (2026-11-23)</h2>
+    <h2 id="timeline-title">Daily Hourly Log Timeline</h2>
     <table>
         <thead>
             <tr>
                 <th style="background-color: #495057;">Country</th>
-    <th class="timeline-header">00h</th><th class="timeline-header">01h</th><th class="timeline-header">02h</th><th class="timeline-header">03h</th><th class="timeline-header">04h</th><th class="timeline-header">05h</th><th class="timeline-header">06h</th><th class="timeline-header">07h</th><th class="timeline-header">08h</th><th class="timeline-header">09h</th><th class="timeline-header">10h</th><th class="timeline-header">11h</th><th class="timeline-header">12h</th><th class="timeline-header">13h</th><th class="timeline-header">14h</th><th class="timeline-header">15h</th><th class="timeline-header">16h</th><th class="timeline-header">17h</th><th class="timeline-header">18h</th><th class="timeline-header">19h</th><th class="timeline-header">20h</th><th class="timeline-header">21h</th><th class="timeline-header">22h</th><th class="timeline-header">23h</th>
+                <th class="timeline-header">00h</th><th class="timeline-header">01h</th><th class="timeline-header">02h</th><th class="timeline-header">03h</th><th class="timeline-header">04h</th><th class="timeline-header">05h</th><th class="timeline-header">06h</th><th class="timeline-header">07h</th><th class="timeline-header">08h</th><th class="timeline-header">09h</th><th class="timeline-header">10h</th><th class="timeline-header">11h</th><th class="timeline-header">12h</th><th class="timeline-header">13h</th><th class="timeline-header">14h</th><th class="timeline-header">15h</th><th class="timeline-header">16h</th><th class="timeline-header">17h</th><th class="timeline-header">18h</th><th class="timeline-header">19h</th><th class="timeline-header">20h</th><th class="timeline-header">21h</th><th class="timeline-header">22h</th><th class="timeline-header">23h</th>
             </tr>
         </thead>
-        <tbody>
-    <tr><td><strong>India</strong></td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-no-agents" title="No Agents Available">0</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td></tr><tr><td><strong>Romania</strong></td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-no-agents" title="No Agents Available">0</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td></tr><tr><td><strong>Hungary</strong></td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-no-agents" title="No Agents Available">0</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td></tr><tr><td><strong>Czech Republic</strong></td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-no-agents" title="No Agents Available">0</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td></tr><tr><td><strong>Mexico</strong></td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-no-agents" title="No Agents Available">0</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td><td class="timeline-cell cell-empty">-</td></tr>
+        <tbody id="timeline-table-body">
+            <!-- Dynamic Injection -->
         </tbody>
     </table>
 </body>
 </html>
-    
