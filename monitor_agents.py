@@ -99,8 +99,14 @@ def check_availability():
 def generate_dashboard(history, today_str, current_hour):
     now = datetime.now()
     all_hours = [f"{h:02d}:00" for h in range(24)]
-    today_data = history.get(today_str, {})
     
+    # Serialize the complete history dictionary to a JSON string for client-side JS injection
+    history_json_str = json.dumps(history)
+    
+    # Define our country sites for JS schema mapping
+    sites_config = {country: {"url": info["url"]} for country, info in SITES.items()}
+    sites_json_str = json.dumps(sites_config)
+
     html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -109,11 +115,19 @@ def generate_dashboard(history, today_str, current_hour):
     <style>
         body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 30px; color: #333; }}
         h1 {{ color: #005691; border-bottom: 3px solid #005691; padding-bottom: 10px; margin-bottom: 5px; }}
-        .meta {{ color: #666; margin-bottom: 30px; font-size: 0.95em; }}
+        .meta {{ color: #666; margin-bottom: 25px; font-size: 0.95em; }}
+        
+        /* Interactive Controls */
+        .controls-container {{ background-color: #ffffff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }}
+        .controls-container label {{ font-weight: bold; color: #495057; }}
+        .controls-container select {{ padding: 8px 15px; border-radius: 4px; border: 1px solid #ced4da; font-size: 1em; color: #495057; cursor: pointer; }}
+        .controls-container select:focus {{ outline: none; border-color: #005691; }}
+
         table {{ width: 100%; border-collapse: collapse; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 40px; }}
         th {{ background-color: #005691; color: white; padding: 12px 15px; font-weight: 600; text-align: left; }}
         td {{ padding: 12px 15px; border-bottom: 1px solid #eee; }}
         tr:last-child td {{ border-bottom: none; }}
+        
         .badge {{ padding: 5px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; display: inline-block; }}
         .badge-online {{ background-color: #d1e7dd; color: #0f5132; }}
         .badge-no-agents {{ background-color: #fff3cd; color: #664d03; }}
@@ -128,12 +142,120 @@ def generate_dashboard(history, today_str, current_hour):
         
         .timeline-header {{ text-align: center; font-size: 0.75em; background-color: #f1f3f5; color: #495057; }}
     </style>
+    
+    <script>
+        // Injected data blocks
+        const historyData = {history_json_str};
+        const sitesConfig = {sites_json_str};
+        const allHours = {json.dumps(all_hours)};
+
+        function populateDateSelector() {{
+            const selector = document.getElementById("date-selector");
+            const dates = Object.keys(historyData).sort().reverse(); // Show newest date first
+            
+            selector.innerHTML = "";
+            dates.forEach(date => {{
+                const option = document.createElement("option");
+                option.value = date;
+                option.text = date;
+                selector.appendChild(option);
+            }});
+
+            if (dates.length > 0) {{
+                selector.selectedIndex = 0;
+                renderDataForDate(dates[0]);
+            }}
+        }}
+
+        function onDateChanged() {{
+            const selectedDate = document.getElementById("date-selector").value;
+            renderDataForDate(selectedDate);
+        }}
+
+        function renderDataForDate(selectedDate) {{
+            const dateData = historyData[selectedDate] || {{}};
+            
+            // 1. Render Current Site Status Table
+            const statusTbody = document.getElementById("status-table-body");
+            statusTbody.innerHTML = "";
+
+            Object.keys(sitesConfig).forEach(country => {{
+                const config = sitesConfig[country];
+                const countryToday = dateData[country] || {{}};
+                
+                // Find the latest recorded hour inside this day's log
+                const loggedHours = Object.keys(countryToday).sort();
+                const latestHour = loggedHours.length > 0 ? loggedHours[loggedHours.length - 1] : null;
+                const latestCheck = latestHour ? countryToday[latestHour] : {{"agents": -1, "status": "No logs recorded"}};
+                
+                const agentsVal = latestCheck.agents;
+                const agentsDisplay = agentsVal >= 0 ? agentsVal : "N/A";
+                
+                let badgeClass = "badge-offline";
+                if (agentsVal > 0) {{
+                    badgeClass = "badge-online";
+                }} else if (agentsVal === 0) {{
+                    badgeClass = "badge-no-agents";
+                }}
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>\${country}</strong></td>
+                    <td><a href="\${config.url}" target="_blank">\${config.url}</a></td>
+                    <td><strong>\${agentsDisplay}</strong></td>
+                    <td><span class="badge \${badgeClass}">\${latestCheck.status}</span></td>
+                `;
+                statusTbody.appendChild(tr);
+            }});
+
+            // 2. Render Timeline Table
+            const timelineTitle = document.getElementById("timeline-title");
+            timelineTitle.innerText = `Daily Hourly Log Timeline (\${selectedDate})`;
+
+            const timelineTbody = document.getElementById("timeline-table-body");
+            timelineTbody.innerHTML = "";
+
+            Object.keys(sitesConfig).forEach(country => {{
+                const countryToday = dateData[country] || {{}};
+                const tr = document.createElement("tr");
+                
+                let rowHtml = `<td><strong>\${country}</strong></td>`;
+                
+                allHours.forEach(hr => {{
+                    if (hr in countryToday) {{
+                        const hourData = countryToday[hr];
+                        const agents = hourData.agents;
+                        if (agents > 0) {{
+                            rowHtml += `<td class="timeline-cell cell-online" title="\${hourData.status}">\${agents}a</td>`;
+                        } else if (agents === 0) {{
+                            rowHtml += `<td class="timeline-cell cell-no-agents" title="\${hourData.status}">0</td>`;
+                        } else {{
+                            rowHtml += `<td class="timeline-cell cell-offline" title="\${hourData.status}">❌</td>`;
+                        }}
+                    }} else {{
+                        rowHtml += `<td class="timeline-cell cell-empty">-</td>`;
+                    }}
+                }});
+                
+                tr.innerHTML = rowHtml;
+                timelineTbody.appendChild(tr);
+            }});
+        }}
+
+        window.onload = populateDateSelector;
+    </script>
 </head>
 <body>
-    <h1>🤖 Bosch Rexroth Chat Availability</h1>
-    <div class="meta">Last System Check: <strong>{now.strftime('%Y-%m-%d %H:%M:%S')}</strong> | Check interval: Hourly</div>
+    <h1>🤖 Bosch Rexroth Chat Availability Dashboard</h1>
+    <div class="meta">Last Evaluated: <strong>{now.strftime('%Y-%m-%d %H:%M:%S')}</strong> | Check interval: Hourly</div>
     
-    <h2>Current Site Status</h2>
+    <!-- Interactive Date Selection Bar -->
+    <div class="controls-container">
+        <label for="date-selector">📅 Select Monitoring Date: </label>
+        <select id="date-selector" onchange="onDateChanged()"></select>
+    </div>
+
+    <h2>Current Site Status (Last Logged Instance of Day)</h2>
     <table>
         <thead>
             <tr>
@@ -143,43 +265,17 @@ def generate_dashboard(history, today_str, current_hour):
                 <th>Current Status</th>
             </tr>
         </thead>
-        <tbody>
-    """
-    
-    for country, info in SITES.items():
-        # Get latest checked record
-        country_today = today_data.get(country, {})
-        latest_check = country_today.get(current_hour, {"agents": -1, "status": "Not Checked Yet"})
-        
-        agents_val = latest_check["agents"]
-        agents_display = str(agents_val) if agents_val >= 0 else "N/A"
-        
-        if agents_val > 0:
-            badge_class = "badge-online"
-        elif agents_val == 0:
-            badge_class = "badge-no-agents"
-        else:
-            badge_class = "badge-offline"
-            
-        html += f"""
-            <tr>
-                <td><strong>{country}</strong></td>
-                <td><a href="{info['url']}" target="_blank">{info['url']}</a></td>
-                <td><strong>{agents_display}</strong></td>
-                <td><span class="badge {badge_class}">{latest_check['status']}</span></td>
-            </tr>
-        """
-        
-    html += """
+        <tbody id="status-table-body">
+            <!-- Dynamic Injection -->
         </tbody>
     </table>
     
-    <h2>Daily Hourly Log Timeline ({})</h2>
+    <h2 id="timeline-title">Daily Hourly Log Timeline</h2>
     <table>
         <thead>
             <tr>
                 <th style="background-color: #495057;">Country</th>
-    """.format(today_str)
+    """
     
     for hr in all_hours:
         html += f'<th class="timeline-header">{hr.split(":")[0]}h</th>'
@@ -187,28 +283,8 @@ def generate_dashboard(history, today_str, current_hour):
     html += """
             </tr>
         </thead>
-        <tbody>
-    """
-    
-    for country in SITES.keys():
-        html += f"<tr><td><strong>{country}</strong></td>"
-        country_today = today_data.get(country, {})
-        
-        for hr in all_hours:
-            if hr in country_today:
-                hour_data = country_today[hr]
-                agents = hour_data["agents"]
-                if agents > 0:
-                    html += f'<td class="timeline-cell cell-online" title="{hour_data["status"]}">{agents}a</td>'
-                elif agents == 0:
-                    html += f'<td class="timeline-cell cell-no-agents" title="{hour_data["status"]}">0</td>'
-                else:
-                    html += f'<td class="timeline-cell cell-offline" title="{hour_data["status"]}">❌</td>'
-            else:
-                html += '<td class="timeline-cell cell-empty">-</td>'
-        html += "</tr>"
-        
-    html += """
+        <tbody id="timeline-table-body">
+            <!-- Dynamic Injection -->
         </tbody>
     </table>
 </body>
@@ -217,7 +293,11 @@ def generate_dashboard(history, today_str, current_hour):
     
     with open(DASHBOARD_FILE, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"[{now.strftime('%H:%M:%S')}] Dashboard updated successfully: {DASHBOARD_FILE}")
+    print(f"[{now.strftime('%H:%M:%S')}] Interactive dashboard generated successfully.")
+
+def btoa_obfuscate(text):
+    import base64
+    return base64.b64encode(text.encode()).decode()
 
 if __name__ == "__main__":
     print("Initiating hourly check...")
