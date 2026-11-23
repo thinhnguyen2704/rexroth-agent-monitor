@@ -113,7 +113,7 @@ def generate_dashboard(history, today_str, current_hour):
     for hr in all_hours:
         timeline_headers_html += f'<th class="timeline-header">{hr.split(":")[0]}h</th>'
 
-    # Safe HTML Template with placeholders
+    # Safe HTML Template with placeholders (No f-string syntax conflict)
     html_template = """<!DOCTYPE html>
 <html>
 <head>
@@ -146,11 +146,12 @@ def generate_dashboard(history, today_str, current_hour):
         .cell-no-agents { background-color: #fff3cd; color: #846100; }
         .cell-offline { background-color: #f8d7da; color: #842029; }
         .cell-empty { background-color: #fafafa; color: #ccc; }
+        
         .timeline-header { text-align: center; font-size: 0.75em; background-color: #f1f3f5; color: #495057; }
     </style>
     
     <script>
-        // Injected data blocks safely passed via replacement
+        // Injected data blocks safely passed via sequential replacement
         const historyData = __HISTORY_DATA__;
         const sitesConfig = __SITES_CONFIG__;
         const allHours = __ALL_HOURS__;
@@ -291,17 +292,17 @@ def generate_dashboard(history, today_str, current_hour):
 </body>
 </html>"""
 
-    # Inject variables safely using replacement tags
+    # ✅ CORRECT SEQUENTIAL REPLACEMENT CHAINING
     html = html_template.replace("__HISTORY_DATA__", history_json_str)
-    html = html_template.replace("__SITES_CONFIG__", sites_json_str)
-    html = html_template.replace("__ALL_HOURS__", hours_json_str)
-    html = html_template.replace("__LAST_CHECKED__", now.strftime('%Y-%m-%d %H:%M:%S'))
-    html = html_template.replace("__TIMELINE_HEADERS__", timeline_headers_html)
+    html = html.replace("__SITES_CONFIG__", sites_json_str)
+    html = html.replace("__ALL_HOURS__", hours_json_str)
+    html = html.replace("__LAST_CHECKED__", now.strftime('%Y-%m-%d %H:%M:%S'))
+    html = html.replace("__TIMELINE_HEADERS__", timeline_headers_html)
 
     with open(DASHBOARD_FILE, "w", encoding="utf-8") as f:
         f.write(html)
         
-    print(f"[{now.strftime('%H:%M:%S')}] Interactive dashboard generated successfully.")
+    print(f"[{now.strftime('%H:%M:%S')}] Interactive dashboard updated successfully.")
 
 def btoa_obfuscate(text):
     import base64
